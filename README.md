@@ -13,6 +13,16 @@
 
 The fake turtle raises on any call or color name real turtle would not accept the same way, so the code shown on the site always runs on a desktop.
 
+## Shared galleries (worker/)
+
+"Galerime kaydet" in the draw mode saves a drawing to a personal gallery; the gallery link (`#galeri/<id>`) shows every saved drawing and picks up new ones every 20 s.
+
+- `worker/src/index.js`: Cloudflare Worker API (create gallery, add/list/delete drawings). Reads are public by unguessable id; writes need the gallery secret, which only the creator's browser keeps (localStorage).
+- `worker/schema.sql`: D1 tables. Database binding name: `DB` (set in `worker/wrangler.toml`).
+- Deploy: `cd worker && npx wrangler@4.30.0 deploy` (first time: `wrangler login`, `wrangler d1 create turtle-galeri`, `wrangler d1 execute turtle-galeri --remote --file schema.sql`).
+- Local: `npx wrangler@4.30.0 d1 execute turtle-galeri --local --file schema.sql`, then `npx wrangler@4.30.0 dev --local --port 8787`; the site uses `http://127.0.0.1:8787` automatically on localhost.
+- The site's API address and the allowed origins live in `docs/index.html` (`API`) and `worker/src/index.js` (`ALLOWED_ORIGINS`); change both together.
+
 ## Run locally
 
 ```bash
@@ -35,6 +45,7 @@ Create `drawings/NN_name.py`. The first line is the title (`# Title`). Use `s.se
 drawings/        Python turtle scripts (source of truth)
 tools/           fake_turtle.py recorder + build.py
 docs/            GitHub Pages site (index.html + generated data/)
+worker/          Cloudflare Worker + D1 schema for shared galleries
 ```
 
 ## Pitfalls

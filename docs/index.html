@@ -855,7 +855,7 @@ kbd { font-family: "JetBrains Mono", monospace; border: 1px solid var(--line); b
   // ---------- cloud galleries (Cloudflare Worker + D1) ----------
   const API = /^(localhost|127\.0\.0\.1)$/.test(location.hostname)
     ? "http://127.0.0.1:8787"
-    : "https://turtle-galeri.WORKERS_SUBDOMAIN.workers.dev";
+    : "https://turtle-galeri.ardazybk18.workers.dev";
   let memGallery = null;
   const myGallery = {
     get() { try { return JSON.parse(localStorage.getItem("tg-gallery") || "null") || memGallery; } catch { return memGallery; } },
