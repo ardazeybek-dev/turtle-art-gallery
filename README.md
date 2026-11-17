@@ -9,7 +9,7 @@
 1. Every drawing is a plain Python script in `drawings/` that runs with real `turtle`.
 2. `tools/build.py` runs each script against `tools/fake_turtle.py`, a strict stand-in that records every line, dot, fill and text instead of opening a window.
 3. The recordings go to `docs/data/` (one JSON per drawing + `manifest.json` with titles and source code).
-4. `docs/index.html` replays a recording on a canvas and shows the source beside it.
+4. `docs/index.html` replays a recording on a canvas and shows the source beside it. "Video indir" renders the same replay frame by frame into a 1080×1920 MP4 in the browser (WebCodecs + mediabunny, loaded only when used).
 
 The fake turtle raises on any call or color name real turtle would not accept the same way, so the code shown on the site always runs on a desktop.
 

@@ -81,6 +81,9 @@ main {
 .btn.primary:hover { background: #ff5a8c; }
 .nav { font-size: 22px; width: 56px; justify-content: center; }
 .grow { flex: 1; }
+.break { display: none; }
+.btn:disabled { opacity: .7; cursor: progress; }
+#pick { flex: 1 1 160px; }
 .seg { display: inline-flex; border: 1px solid var(--line); border-radius: 12px; overflow: hidden; }
 .seg button { border: 0; background: var(--panel); padding: 0 12px; min-height: 44px; font-weight: 600; font-size: 14px; color: var(--muted); }
 .seg button + button { border-left: 1px solid var(--line); }
@@ -146,7 +149,9 @@ kbd { font-family: "JetBrains Mono", monospace; border: 1px solid var(--line); b
   .titlebar h2 { font-size: 22px; }
   .brand h1 { font-size: 17px; }
   .tabs button { padding: 7px 11px; font-size: 13px; }
-  select.btn { max-width: 100%; flex: 1 1 100%; order: 10; }
+  select.btn { max-width: none; flex: 1 1 0; min-width: 0; order: 10; }
+  .break { display: block; flex-basis: 100%; height: 0; order: 9; }
+  #video { order: 11; }
   .controls.gallery-only { flex-wrap: wrap; }
   #replay { width: 48px; justify-content: center; padding: 0; font-size: 20px; }
   #replay .lbl { display: none; }
@@ -190,13 +195,16 @@ kbd { font-family: "JetBrains Mono", monospace; border: 1px solid var(--line); b
       </div>
       <span class="grow"></span>
       <button class="btn nav primary" id="next" aria-label="Sonraki çizim">›</button>
+      <span class="break"></span>
       <select class="btn" id="pick" aria-label="Çizim seç"></select>
+      <button class="btn" id="video">🎬 Video indir</button>
     </div>
     <div class="controls draw-only">
       <button class="btn primary" id="turtleDraw">🐢 Turtle çizsin</button>
       <button class="btn" id="undo">↶ Geri al</button>
       <button class="btn" id="clear">Temizle</button>
       <button class="btn" id="save">PNG indir</button>
+      <button class="btn" id="videoDraw">🎬 Video indir</button>
     </div>
   </section>
 
@@ -298,79 +306,198 @@ kbd { font-family: "JetBrains Mono", monospace; border: 1px solid var(--line); b
     if (!finished) P.raf = requestAnimationFrame(tick);
     else { setTimeout(() => { if (P.data && P.i >= P.data.ops.length) $("progress").style.width = "0"; }, 600); if (P.onEnd) P.onEnd(); }
   }
-  function run(budget) {
-    const ops = P.data.ops;
-    while (budget > 0 && P.i < ops.length) {
-      const op = ops[P.i];
+  function run(budget) { runOps(P, ctx, px, k, budget); }
+  // Plays `budget` steps of S.data.ops onto context c (size px square, kk px per turtle unit).
+  function runOps(S, c, size, kk, budget) {
+    const ops = S.data.ops;
+    while (budget > 0 && S.i < ops.length) {
+      const op = ops[S.i];
       const t = op[0];
-      if (t === 1) { ctx.strokeStyle = op[1]; ctx.lineWidth = op[2]; P.i++; continue; }
+      if (t === 1) { c.strokeStyle = op[1]; c.lineWidth = op[2]; S.i++; continue; }
       if (t === 0) {
         const n = (op.length - 1) / 2 - 1;
-        const take = Math.min(budget, n - P.j);
-        ctx.beginPath();
-        ctx.moveTo(op[1 + 2 * P.j], op[2 + 2 * P.j]);
-        for (let s = 1; s <= take; s++) ctx.lineTo(op[1 + 2 * (P.j + s)], op[2 + 2 * (P.j + s)]);
-        ctx.stroke();
-        const e = P.j + take;
+        const take = Math.min(budget, n - S.j);
+        c.beginPath();
+        c.moveTo(op[1 + 2 * S.j], op[2 + 2 * S.j]);
+        for (let s = 1; s <= take; s++) c.lineTo(op[1 + 2 * (S.j + s)], op[2 + 2 * (S.j + s)]);
+        c.stroke();
+        const e = S.j + take;
         const x = op[1 + 2 * e], y = op[2 + 2 * e], x0 = op[2 * e - 1], y0 = op[2 * e];
-        if (x !== x0 || y !== y0) P.dir = Math.atan2(y - y0, x - x0);
-        P.hx = x; P.hy = y;
-        P.j = e; budget -= take; P.done += take;
-        if (P.j >= n) { P.i++; P.j = 0; }
+        if (x !== x0 || y !== y0) S.dir = Math.atan2(y - y0, x - x0);
+        S.hx = x; S.hy = y;
+        S.j = e; budget -= take; S.done += take;
+        if (S.j >= n) { S.i++; S.j = 0; }
         continue;
       }
       if (t === 3) {
-        ctx.fillStyle = op[4]; ctx.beginPath(); ctx.arc(op[1], op[2], Math.max(op[3], 1) / 2, 0, Math.PI * 2); ctx.fill();
-        P.hx = op[1]; P.hy = op[2];
+        c.fillStyle = op[4]; c.beginPath(); c.arc(op[1], op[2], Math.max(op[3], 1) / 2, 0, Math.PI * 2); c.fill();
+        S.hx = op[1]; S.hy = op[2];
       } else if (t === 4) {
         const pts = op[2];
-        ctx.fillStyle = op[1]; ctx.beginPath(); ctx.moveTo(pts[0], pts[1]);
-        for (let s = 2; s < pts.length; s += 2) ctx.lineTo(pts[s], pts[s + 1]);
-        ctx.closePath(); ctx.fill();
+        c.fillStyle = op[1]; c.beginPath(); c.moveTo(pts[0], pts[1]);
+        for (let s = 2; s < pts.length; s += 2) c.lineTo(pts[s], pts[s + 1]);
+        c.closePath(); c.fill();
       } else if (t === 5) {
-        ctx.save(); ctx.setTransform(1, 0, 0, 1, 0, 0);
-        ctx.fillStyle = op[4];
-        ctx.font = `${op[8] === "bold" ? 700 : 400} ${op[5] * 1.333 * k}px ${op[7]}, sans-serif`;
-        ctx.textAlign = op[6]; ctx.textBaseline = "bottom";
-        ctx.fillText(op[3], px / 2 + op[1] * k, px / 2 - op[2] * k);
-        ctx.restore();
+        const m = c.getTransform();
+        c.save(); c.setTransform(1, 0, 0, 1, 0, 0);
+        c.fillStyle = op[4];
+        c.font = `${op[8] === "bold" ? 700 : 400} ${op[5] * 1.333 * kk}px ${op[7]}, sans-serif`;
+        c.textAlign = op[6]; c.textBaseline = "bottom";
+        c.fillText(op[3], m.e + op[1] * kk, m.f - op[2] * kk);
+        c.restore();
       }
-      P.i++; budget--; P.done++;
+      S.i++; budget--; S.done++;
     }
+  }
+  function headShape(c, S, s) {
+    c.save();
+    c.translate(S.hx, S.hy); c.rotate(S.dir);
+    c.beginPath(); c.moveTo(s * 1.2, 0); c.lineTo(-s * 0.7, s * 0.7); c.lineTo(-s * 0.35, 0); c.lineTo(-s * 0.7, -s * 0.7); c.closePath();
+    c.fillStyle = "#fff"; c.shadowColor = "rgba(255,61,119,.9)"; c.shadowBlur = 12; c.fill();
+    c.restore();
   }
   function drawHead(show) {
     hctx.setTransform(1, 0, 0, 1, 0, 0);
     hctx.clearRect(0, 0, px, px);
     if (!show) return;
     world(hctx);
-    hctx.save();
-    hctx.translate(P.hx, P.hy); hctx.rotate(P.dir);
-    const s = 9 / Math.max(k, 0.4);
-    hctx.beginPath(); hctx.moveTo(s * 1.2, 0); hctx.lineTo(-s * 0.7, s * 0.7); hctx.lineTo(-s * 0.35, 0); hctx.lineTo(-s * 0.7, -s * 0.7); hctx.closePath();
-    hctx.fillStyle = "#fff"; hctx.shadowColor = "rgba(255,61,119,.9)"; hctx.shadowBlur = 12; hctx.fill();
-    hctx.restore();
+    headShape(hctx, P, 9 / Math.max(k, 0.4));
   }
 
   // ---------- code view ----------
   const KW = new Set("import as from def return for in if else elif while and or not None True False lambda with class pass break continue global".split(" "));
   const BI = new Set("range len int float str abs min max sum round print list tuple enumerate reversed zip".split(" "));
   const esc = (s) => s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
-  function highlight(code) {
-    const re = /(#[^\n]*)|("(?:[^"\\\n]|\\.)*"|'(?:[^'\\\n]|\\.)*')|(\b\d+(?:\.\d+)?\b)|([A-Za-z_]\w*)|([\s\S])/g;
-    let out = "", m;
+  // Python code -> lines of [text, class] tokens (class "" = plain)
+  function tokenize(code) {
+    const re = /(#[^\n]*)|("(?:[^"\\\n]|\\.)*"|'(?:[^'\\\n]|\\.)*')|(\b\d+(?:\.\d+)?\b)|([A-Za-z_]\w*)|(\n)|([^\n])/g;
+    const lines = [[]];
+    let m;
     while ((m = re.exec(code))) {
-      if (m[1]) out += `<span class="c">${esc(m[1])}</span>`;
-      else if (m[2]) out += `<span class="s">${esc(m[2])}</span>`;
-      else if (m[3]) out += `<span class="n">${m[3]}</span>`;
+      const line = lines[lines.length - 1];
+      if (m[1]) line.push([m[1], "c"]);
+      else if (m[2]) line.push([m[2], "s"]);
+      else if (m[3]) line.push([m[3], "n"]);
       else if (m[4]) {
         const w = m[4];
-        if (KW.has(w)) out += `<span class="k">${w}</span>`;
-        else if (BI.has(w)) out += `<span class="b">${w}</span>`;
-        else if (code[re.lastIndex] === "(") out += `<span class="f">${w}</span>`;
-        else out += w;
-      } else out += esc(m[5]);
+        line.push([w, KW.has(w) ? "k" : BI.has(w) ? "b" : code[re.lastIndex] === "(" ? "f" : ""]);
+      } else if (m[5]) lines.push([]);
+      else line.push([m[6], ""]);
     }
-    return out.replace(/\n$/, "").split("\n").map((l) => `<span class="l">${l || " "}</span>`).join("");
+    if (!lines[lines.length - 1].length) lines.pop();
+    return lines;
+  }
+  function highlight(code) {
+    return tokenize(code).map((line) => `<span class="l">${
+      line.map(([txt, cls]) => cls ? `<span class="${cls}">${esc(txt)}</span>` : esc(txt)).join("") || " "
+    }</span>`).join("");
+  }
+
+  // ---------- MP4 export ----------
+  const VW = 1080, VH = 1920, FPS = 30, DS = 1000;
+  const TOKCOL = { k: "#c792ea", s: "#c3e88d", n: "#f78c6c", c: "#6b6f8a", f: "#82aaff", b: "#ffcb6b", "": "#ecebf3" };
+  let mbPromise = null, exporting = false;
+  const loadMB = () => mbPromise || (mbPromise = import("https://cdn.jsdelivr.net/npm/mediabunny@1.63.0/dist/bundles/mediabunny.min.mjs"));
+  function fitText(c, text, maxW, size, weight) {
+    let s = size;
+    do { c.font = `${weight} ${s}px "Space Grotesk", sans-serif`; s -= 2; } while (c.measureText(text).width > maxW && s > 20);
+  }
+  function composeFrame(c, dc, S, lines, title, label, progress, showHead) {
+    c.setTransform(1, 0, 0, 1, 0, 0);
+    c.fillStyle = "#08080c"; c.fillRect(0, 0, VW, VH);
+    c.textBaseline = "alphabetic"; c.textAlign = "left";
+    c.fillStyle = "#ff3d77"; c.font = '600 30px "JetBrains Mono", monospace';
+    c.fillText(label, 40, 120);
+    c.fillStyle = "#ecebf3"; fitText(c, title, VW - 80, 72, 700);
+    c.fillText(title, 40, 200);
+    // drawing
+    c.save();
+    c.beginPath(); c.roundRect(40, 240, DS, DS, 28); c.clip();
+    c.drawImage(dc, 40, 240);
+    if (showHead) {
+      c.setTransform(DS / WORLD, 0, 0, -DS / WORLD, 40 + DS / 2, 240 + DS / 2);
+      headShape(c, S, 13);
+    }
+    c.restore();
+    c.fillStyle = "#ff3d77"; c.fillRect(40, 240 + DS - 6, DS * progress, 6);
+    // code panel
+    const top = 1290, h = 560;
+    c.fillStyle = "#111118"; c.beginPath(); c.roundRect(40, top, DS, h, 28); c.fill();
+    ["#ff5f57", "#febc2e", "#28c840"].forEach((col, i) => { c.fillStyle = col; c.beginPath(); c.arc(80 + i * 30, top + 38, 9, 0, Math.PI * 2); c.fill(); });
+    c.fillStyle = "#8b8aa0"; c.font = '26px "JetBrains Mono", monospace'; c.fillText("main.py", 180, top + 47);
+    c.save();
+    c.beginPath(); c.rect(40, top + 76, DS, h - 90); c.clip();
+    const lh = 34, visible = Math.floor((h - 100) / lh);
+    const scroll = Math.max(0, lines.length - visible) * Math.min(1, progress * 1.1);
+    c.font = '24px "JetBrains Mono", monospace';
+    const cw = c.measureText("0").width;
+    const first = Math.floor(scroll);
+    for (let li = first; li < Math.min(lines.length, first + visible + 2); li++) {
+      const y = top + 112 + (li - scroll) * lh;
+      c.fillStyle = "#44445a"; c.textAlign = "right"; c.fillText(String(li + 1), 120, y);
+      c.textAlign = "left";
+      let x = 145;
+      for (const [txt, cls] of lines[li]) {
+        if (x > VW - 60) break;
+        c.fillStyle = TOKCOL[cls]; c.fillText(txt, x, y); x += cw * txt.length;
+      }
+    }
+    c.restore();
+    c.fillStyle = "#8b8aa0"; c.font = '500 28px "Space Grotesk", sans-serif'; c.textAlign = "center";
+    c.fillText("🐢 ardazeybek-dev.github.io/turtle-art-gallery", VW / 2, VH - 30);
+  }
+  async function exportVideo(data, title, code, label, fileBase, btn) {
+    if (exporting) return;
+    if (typeof VideoEncoder === "undefined") return toast("Bu tarayıcı video üretemiyor, Chrome ile dene");
+    exporting = true;
+    const oldText = btn.textContent;
+    btn.disabled = true;
+    try {
+      btn.textContent = "Hazırlanıyor…";
+      const MB = await loadMB();
+      await Promise.all(['700 72px "Space Grotesk"', '500 28px "Space Grotesk"', '24px "JetBrains Mono"', '600 30px "JetBrains Mono"']
+        .map((f) => document.fonts.load(f).catch(() => {})));
+      const codec = await MB.getFirstEncodableVideoCodec(["avc"], { width: VW, height: VH });
+      if (!codec) throw new Error("Bu cihaz MP4 (H.264) kodlayamıyor");
+      const out = document.createElement("canvas"); out.width = VW; out.height = VH;
+      const oc = out.getContext("2d");
+      const dc = document.createElement("canvas"); dc.width = DS; dc.height = DS;
+      const dctx = dc.getContext("2d");
+      dctx.fillStyle = data.bg; dctx.fillRect(0, 0, DS, DS);
+      const kk = DS / WORLD;
+      dctx.setTransform(kk, 0, 0, -kk, DS / 2, DS / 2);
+      dctx.lineCap = "round"; dctx.lineJoin = "round";
+      const S = { data, i: 0, j: 0, done: 0, hx: 0, hy: 0, dir: 0 };
+      const total = countSteps(data.ops);
+      const lines = tokenize(code);
+      const drawFrames = Math.round(Math.min(12, Math.max(4, total / 350)) * FPS);
+      const n = drawFrames + 2 * FPS;
+      const output = new MB.Output({ format: new MB.Mp4OutputFormat(), target: new MB.BufferTarget() });
+      const src = new MB.CanvasSource(out, { codec, quality: MB.QUALITY_HIGH });
+      output.addVideoTrack(src, { frameRate: FPS });
+      await output.start();
+      for (let f = 0; f < n; f++) {
+        const target = f < drawFrames ? Math.round(total * (f + 1) / drawFrames) : Infinity;
+        if (target > S.done) runOps(S, dctx, DS, kk, target === Infinity ? Infinity : target - S.done);
+        const finished = S.i >= data.ops.length;
+        composeFrame(oc, dc, S, lines, title, label, finished ? 1 : S.done / Math.max(1, total), !finished);
+        await src.add(f / FPS, 1 / FPS, { keyFrame: f % (2 * FPS) === 0 });
+        if (f % 6 === 0) btn.textContent = `Video %${Math.round(f / n * 100)}`;
+      }
+      await output.finalize();
+      const blob = new Blob([output.target.buffer], { type: "video/mp4" });
+      const a = document.createElement("a");
+      a.href = URL.createObjectURL(blob); a.download = fileBase + ".mp4";
+      document.body.appendChild(a); a.click(); a.remove();
+      setTimeout(() => URL.revokeObjectURL(a.href), 60000);
+      window.__lastVideo = blob;
+      toast("Video indirildi 🎬");
+    } catch (e) {
+      console.warn(e);
+      toast("Video oluşturulamadı: " + (e.message || e));
+    } finally {
+      exporting = false; btn.disabled = false; btn.textContent = oldText;
+    }
   }
   let currentCode = "";
   function showCode(code, fname) {
@@ -541,6 +668,17 @@ kbd { font-family: "JetBrains Mono", monospace; border: 1px solid var(--line); b
   };
   $("undo").onclick = () => { stop(); D.strokes.pop(); redrawStrokes(); updateDrawCode(); };
   $("clear").onclick = () => { stop(); D.strokes = []; redrawStrokes(); updateDrawCode(); $("drawHint").style.display = ""; };
+  $("videoDraw").onclick = () => {
+    if (!D.strokes.length) return toast("Önce bir şey çiz 🙂");
+    exportVideo(drawOps(), "Benim Çizimim", currentCode, "SEN ÇİZ", "benim-cizimim", $("videoDraw"));
+  };
+  $("video").onclick = async () => {
+    const it = list[index];
+    try {
+      const data = await load(index);
+      exportVideo(data, it.title, it.code, `#${index + 1} · PYTHON TURTLE`, it.py.replace(/\.py$/, ""), $("video"));
+    } catch { toast("Çizim yüklenemedi"); }
+  };
   $("save").onclick = () => {
     cv.toBlob((b) => {
       const a = document.createElement("a");
