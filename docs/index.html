@@ -4,9 +4,9 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Turtle Galerisi</title>
-<meta name="description" content="Python turtle ile çizilmiş 48 çizim, kodlarıyla birlikte. Ok tuşlarıyla gez, kendi çizimini yap.">
+<meta name="description" content="Python turtle ile çizilmiş 77 çizim, kodlarıyla birlikte. Ok tuşlarıyla gez, kendi çizimini yap ve galerine kaydet.">
 <meta property="og:title" content="Turtle Galerisi">
-<meta property="og:description" content="48 Python turtle çizimi, kodlarıyla birlikte canlı canlı çiziliyor.">
+<meta property="og:description" content="77 Python turtle çizimi, kodlarıyla birlikte canlı canlı çiziliyor.">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600&family=Space+Grotesk:wght@500;700&display=swap" rel="stylesheet">
@@ -123,6 +123,19 @@ pre .l::before {
 .mode-draw .draw-tools { display: flex; }
 .mode-draw .gallery-only { display: none !important; }
 .mode-gallery .draw-only { display: none !important; }
+.mode-shared .draw-only, .mode-shared #pick, .mode-shared footer,
+.mode-gallery .shared-only, .mode-draw .shared-only, [hidden] { display: none !important; }
+.thumbs { display: flex; gap: 8px; overflow-x: auto; padding: 2px 2px 6px; scrollbar-width: thin; }
+.thumbs button {
+  flex: 0 0 auto; width: 84px; height: 84px; padding: 0; border-radius: 12px; overflow: hidden;
+  border: 2px solid var(--line); background: #000;
+}
+.thumbs button[aria-current="true"] { border-color: var(--accent); }
+.thumbs canvas { width: 100%; height: 100%; display: block; }
+.share-box { display: flex; flex-direction: column; gap: 6px; padding: 12px 14px; border: 1px dashed #3a3a4d; border-radius: 12px; }
+.share-box b { font-size: 14px; }
+.share-box small { color: var(--muted); font-size: 13px; }
+input.text { min-height: 44px; flex: 1 1 200px; padding: 0 12px; border-radius: 12px; border: 1px solid var(--line); background: var(--panel); }
 .row { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
 .row label { color: var(--muted); font-size: 14px; min-width: 76px; }
 .sw { width: 32px; height: 32px; border-radius: 50%; border: 2px solid transparent; padding: 0; }
@@ -198,9 +211,23 @@ kbd { font-family: "JetBrains Mono", monospace; border: 1px solid var(--line); b
       <span class="break"></span>
       <select class="btn" id="pick" aria-label="Çizim seç"></select>
       <button class="btn" id="video">🎬 Video indir</button>
+      <button class="btn shared-only" id="delShared" hidden>🗑️ Sil</button>
+    </div>
+    <div class="thumbs shared-only" id="thumbs" aria-label="Galerideki çizimler"></div>
+    <div class="controls draw-only">
+      <input class="text" id="dTitle" maxlength="60" placeholder="Çizimin adı (isteğe bağlı)" aria-label="Çizimin adı">
+      <button class="btn primary" id="saveCloud">☁️ Galerime kaydet</button>
+    </div>
+    <div class="share-box draw-only" id="myGalleryRow" hidden>
+      <b>🖼️ Galerin hazır</b>
+      <small>Bu linki bir kere arkadaşına at; kaydettiğin her çizim orada kendiliğinden belirir.</small>
+      <div class="row">
+        <button class="btn" id="copyGallery">🔗 Galeri linkini kopyala</button>
+        <button class="btn" id="openGallery">Galerimi aç</button>
+      </div>
     </div>
     <div class="controls draw-only">
-      <button class="btn primary" id="turtleDraw">🐢 Turtle çizsin</button>
+      <button class="btn" id="turtleDraw">🐢 Turtle çizsin</button>
       <button class="btn" id="undo">↶ Geri al</button>
       <button class="btn" id="clear">Temizle</button>
       <button class="btn" id="save">PNG indir</button>
@@ -648,10 +675,11 @@ kbd { font-family: "JetBrains Mono", monospace; border: 1px solid var(--line); b
   wrap.addEventListener("pointerup", endStroke);
   wrap.addEventListener("pointercancel", endStroke);
 
-  function updateDrawCode() {
+  function updateDrawCode() { showCode(buildDrawCode(D.strokes), "benim_cizimim.py"); }
+  function buildDrawCode(strokes, title = "Benim Çizimim") {
     const groups = [];
-    const asciiStrokes = D.strokes.filter((st) => st.style === "ascii");
-    for (const st of D.strokes) {
+    const asciiStrokes = strokes.filter((st) => st.style === "ascii");
+    for (const st of strokes) {
       if (st.style === "ascii") continue;
       const key = `${st.n}|${st.mirror}`;
       let g = groups.find((x) => x.key === key);
@@ -659,7 +687,7 @@ kbd { font-family: "JetBrains Mono", monospace; border: 1px solid var(--line); b
       g.strokes.push(st);
     }
     const lines = [
-      "# Benim Çizimim", "import turtle as t", "import math as m", "",
+      "# " + title.replace(/\s+/g, " "), "import turtle as t", "import math as m", "",
       "s = t.Screen()", "s.setup(700, 700)", 's.bgcolor("black")', "s.tracer(0)",
       "p = t.Turtle()", "p.hideturtle()", "",
       "",
@@ -702,11 +730,11 @@ kbd { font-family: "JetBrains Mono", monospace; border: 1px solid var(--line); b
         '        p.write(ch, font=("Courier", 10, "bold"))', "    s.update()", "");
     }
     lines.push("s.update()", "t.done()");
-    showCode(lines.join("\n") + "\n", "benim_cizimim.py");
+    return lines.join("\n") + "\n";
   }
-  function drawOps() {
+  function drawOps(strokes = D.strokes) {
     const ops = [];
-    for (const st of D.strokes) {
+    for (const st of strokes) {
       if (st.style === "ascii") { ops.push(...cellOps(st, st.cells)); continue; }
       ops.push([1, st.color, st.width]);
       for (let i = 0; i < st.n; i++) {
@@ -736,6 +764,11 @@ kbd { font-family: "JetBrains Mono", monospace; border: 1px solid var(--line); b
     exportVideo(drawOps(), "Benim Çizimim", currentCode, "SEN ÇİZ", "benim-cizimim", $("videoDraw"));
   };
   $("video").onclick = async () => {
+    if (mode === "shared") {
+      if (!SH.current) return;
+      const it = SH.items[SH.index];
+      return exportVideo(drawOps(SH.current.strokes), it.title || "Çizim", currentCode, "GALERİ", "turtle-cizim", $("video"));
+    }
     const it = list[index];
     try {
       const data = await load(index);
@@ -776,15 +809,18 @@ kbd { font-family: "JetBrains Mono", monospace; border: 1px solid var(--line); b
       redrawStrokes(); updateDrawCode();
       $("drawHint").style.display = D.strokes.length ? "none" : "";
       history.replaceState(null, "", "#ciz");
-    } else open(index);
+      refreshMyGalleryRow();
+    } else if (m === "gallery") open(index);
+    if (m !== "shared") clearInterval(SH.timer);
   }
   $("tabGallery").onclick = () => setMode("gallery");
   $("tabDraw").onclick = () => setMode("draw");
 
   // ---------- controls ----------
-  $("prev").onclick = () => open(index - 1);
-  $("next").onclick = () => open(index + 1);
-  $("replay").onclick = () => open(index);
+  const go = (d) => (mode === "shared" ? openShared(SH.index + d) : open(index + d));
+  $("prev").onclick = () => go(-1);
+  $("next").onclick = () => go(1);
+  $("replay").onclick = () => go(0);
   $("pick").onchange = (e) => open(+e.target.value);
   $("speed").addEventListener("click", (e) => {
     const b = e.target.closest("button"); if (!b) return;
@@ -796,25 +832,199 @@ kbd { font-family: "JetBrains Mono", monospace; border: 1px solid var(--line); b
     catch { const r = document.createRange(); r.selectNodeContents($("code")); const s = getSelection(); s.removeAllRanges(); s.addRange(r); toast("Seçildi, Ctrl+C ile kopyala"); }
   };
   document.addEventListener("keydown", (e) => {
-    if (mode !== "gallery" || e.target.closest("select, input")) return;
-    if (e.key === "ArrowRight") { e.preventDefault(); open(index + 1); }
-    else if (e.key === "ArrowLeft") { e.preventDefault(); open(index - 1); }
-    else if (e.key === " " && !e.target.closest("button")) { e.preventDefault(); open(index); }
+    if (mode === "draw" || e.target.closest("select, input")) return;
+    if (e.key === "ArrowRight") { e.preventDefault(); go(1); }
+    else if (e.key === "ArrowLeft") { e.preventDefault(); go(-1); }
+    else if (e.key === " " && !e.target.closest("button")) { e.preventDefault(); go(0); }
   });
   let sx = null, sy = null;
-  wrap.addEventListener("touchstart", (e) => { if (mode === "gallery") { sx = e.touches[0].clientX; sy = e.touches[0].clientY; } }, { passive: true });
+  wrap.addEventListener("touchstart", (e) => { if (mode !== "draw") { sx = e.touches[0].clientX; sy = e.touches[0].clientY; } }, { passive: true });
   wrap.addEventListener("touchend", (e) => {
-    if (mode !== "gallery" || sx === null) return;
+    if (mode === "draw" || sx === null) return;
     const dx = e.changedTouches[0].clientX - sx, dy = e.changedTouches[0].clientY - sy;
     sx = null;
-    if (Math.abs(dx) > 50 && Math.abs(dx) > Math.abs(dy) * 1.5) open(index + (dx < 0 ? 1 : -1));
+    if (Math.abs(dx) > 50 && Math.abs(dx) > Math.abs(dy) * 1.5) go(dx < 0 ? 1 : -1);
   });
 
   let toastTimer;
-  function toast(msg) {
+  function toast(msg, ms = 1800) {
     const t = $("toast"); t.textContent = msg; t.classList.add("show");
-    clearTimeout(toastTimer); toastTimer = setTimeout(() => t.classList.remove("show"), 1800);
+    clearTimeout(toastTimer); toastTimer = setTimeout(() => t.classList.remove("show"), ms);
   }
+
+  // ---------- cloud galleries (Cloudflare Worker + D1) ----------
+  const API = /^(localhost|127\.0\.0\.1)$/.test(location.hostname)
+    ? "http://127.0.0.1:8787"
+    : "https://turtle-galeri.WORKERS_SUBDOMAIN.workers.dev";
+  let memGallery = null;
+  const myGallery = {
+    get() { try { return JSON.parse(localStorage.getItem("tg-gallery") || "null") || memGallery; } catch { return memGallery; } },
+    set(v) { memGallery = v; try { v ? localStorage.setItem("tg-gallery", JSON.stringify(v)) : localStorage.removeItem("tg-gallery"); } catch {} },
+  };
+  async function api(path, opts = {}) {
+    const r = await fetch(API + path, { ...opts, headers: { "Content-Type": "application/json", ...(opts.headers || {}) } });
+    const j = await r.json().catch(() => ({}));
+    if (!r.ok) { const e = new Error(j.error || "Bağlantı hatası (" + r.status + ")"); e.status = r.status; throw e; }
+    return j;
+  }
+  const galleryLink = (gid) => location.origin + location.pathname + "#galeri/" + gid;
+  function refreshMyGalleryRow() { $("myGalleryRow").hidden = !myGallery.get(); }
+  const packStrokes = (strokes) => strokes.map((st) => ({
+    color: st.color, width: st.width, n: st.n, mirror: st.mirror, style: st.style || "line",
+    pts: st.style === "ascii" ? [] : st.pts,
+    cells: st.style === "ascii" ? st.cells.map((c) => c.slice(0, 3)) : [],
+  }));
+  async function saveToCloud(title, strokes, retry = true) {
+    let g = myGallery.get();
+    if (!g) {
+      const r = await api("/api/galleries", { method: "POST", body: JSON.stringify({ name: "" }) });
+      g = { id: r.id, secret: r.secret };
+      myGallery.set(g);
+    }
+    try {
+      await api(`/api/galleries/${g.id}/drawings`, {
+        method: "POST", headers: { Authorization: "Bearer " + g.secret }, body: JSON.stringify({ title, strokes }),
+      });
+    } catch (e) {
+      if (retry && (e.status === 404 || e.status === 403)) { myGallery.set(null); return saveToCloud(title, strokes, false); }
+      throw e;
+    }
+  }
+  $("saveCloud").onclick = async () => {
+    if (!D.strokes.length) return toast("Önce bir şey çiz 🙂");
+    const btn = $("saveCloud"), old = btn.textContent;
+    btn.disabled = true; btn.textContent = "Kaydediliyor…";
+    try {
+      const when = new Date().toLocaleString("tr-TR", { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" });
+      await saveToCloud($("dTitle").value.trim() || "Çizim · " + when, packStrokes(D.strokes));
+      $("dTitle").value = "";
+      refreshMyGalleryRow();
+      toast("Galerine kaydedildi ☁️", 2500);
+    } catch (e) {
+      toast("Kaydedilemedi: " + e.message, 3500);
+    } finally { btn.disabled = false; btn.textContent = old; }
+  };
+  $("copyGallery").onclick = async () => {
+    const g = myGallery.get(); if (!g) return;
+    try { await navigator.clipboard.writeText(galleryLink(g.id)); toast("Galeri linki kopyalandı 🔗"); }
+    catch { toast(galleryLink(g.id), 6000); }
+  };
+  $("openGallery").onclick = () => { const g = myGallery.get(); if (g) location.hash = "#galeri/" + g.id; };
+
+  const SH = { gid: null, items: [], index: 0, currentId: null, current: null, cache: new Map(), timer: 0, sig: "" };
+  const loadShared = (id) => {
+    if (!SH.cache.has(id)) {
+      SH.cache.set(id, api(`/api/drawings/${id}`).then((r) => ({ title: r.title, strokes: r.data.strokes }))
+        .catch((e) => { SH.cache.delete(id); throw e; }));
+    }
+    return SH.cache.get(id);
+  };
+  function renderThumb(c, data) {
+    const g = c.getContext("2d"), kk = c.width / WORLD;
+    g.setTransform(1, 0, 0, 1, 0, 0); g.fillStyle = data.bg; g.fillRect(0, 0, c.width, c.height);
+    g.setTransform(kk, 0, 0, -kk, c.width / 2, c.height / 2); g.lineCap = "round"; g.lineJoin = "round";
+    runOps({ data, i: 0, j: 0, done: 0, hx: 0, hy: 0, dir: 0 }, g, c.width, kk, Infinity);
+  }
+  function markThumb() {
+    [...$("thumbs").children].forEach((b, i) => b.setAttribute("aria-current", i === SH.index ? "true" : "false"));
+  }
+  function renderThumbs() {
+    const box = $("thumbs");
+    box.innerHTML = "";
+    SH.items.forEach((it, i) => {
+      const b = document.createElement("button");
+      b.title = it.title || "Çizim"; b.setAttribute("aria-label", b.title);
+      const c = document.createElement("canvas"); c.width = c.height = 168;
+      b.appendChild(c); box.appendChild(b);
+      b.onclick = () => openShared(i);
+      loadShared(it.id).then((d) => renderThumb(c, drawOps(d.strokes))).catch(() => {});
+    });
+    markThumb();
+  }
+  async function openShared(i) {
+    if (!SH.items.length) return;
+    SH.index = (i + SH.items.length) % SH.items.length;
+    const it = SH.items[SH.index];
+    SH.currentId = it.id;
+    $("title").textContent = it.title || "İsimsiz çizim";
+    $("counter").textContent = `${SH.index + 1} / ${SH.items.length}`;
+    markThumb();
+    const owner = myGallery.get();
+    $("delShared").hidden = !(owner && owner.id === SH.gid);
+    const my = ++token;
+    try {
+      const d = await loadShared(it.id);
+      if (my !== token || mode !== "shared") return;
+      SH.current = d;
+      showCode(buildDrawCode(d.strokes, it.title || "Çizim"), "cizim.py");
+      play(drawOps(d.strokes));
+    } catch { if (my === token) toast("Çizim yüklenemedi"); }
+  }
+  async function refreshShared(first) {
+    try {
+      const g = await api(`/api/galleries/${SH.gid}`);
+      const before = new Set(SH.items.map((x) => x.id));
+      const fresh = g.drawings.filter((d) => !before.has(d.id));
+      const sig = g.drawings.map((d) => d.id).join(",");
+      SH.items = g.drawings;
+      if (sig !== SH.sig) { SH.sig = sig; renderThumbs(); }
+      if (!SH.items.length) {
+        $("title").textContent = "Galeri henüz boş";
+        $("counter").textContent = "";
+        showCode("# Bu galeride henüz çizim yok.\n# Kaydedilen çizimler burada kendiliğinden belirecek.\n", "galeri.py");
+        stop(); clearTo("#000");
+        return;
+      }
+      const idx = SH.items.findIndex((x) => x.id === SH.currentId);
+      if (first || idx < 0) openShared(0);
+      else { SH.index = idx; $("counter").textContent = `${idx + 1} / ${SH.items.length}`; markThumb(); }
+      if (!first && fresh.length) toast(`${fresh.length} yeni çizim geldi 🎨`, 2500);
+    } catch (e) {
+      if (first) {
+        $("title").textContent = e.status === 404 ? "Galeri bulunamadı" : "Galeriye ulaşılamadı";
+        showCode("# Bu link geçersiz ya da galeriye şu an ulaşılamıyor.\n", "galeri.py");
+        stop(); clearTo("#000");
+      }
+    }
+  }
+  function openSharedGallery(gid) {
+    setMode("shared");
+    $("tabGallery").setAttribute("aria-selected", "false");
+    $("tabDraw").setAttribute("aria-selected", "false");
+    Object.assign(SH, { gid, items: [], index: 0, currentId: null, current: null, sig: "" });
+    $("thumbs").innerHTML = "";
+    $("title").textContent = "Galeri yükleniyor…";
+    refreshShared(true);
+    clearInterval(SH.timer);
+    SH.timer = setInterval(() => { if (mode === "shared" && !document.hidden) refreshShared(false); }, 20000);
+  }
+  $("delShared").onclick = async () => {
+    const b = $("delShared");
+    if (b.dataset.armed !== "1") {
+      b.dataset.armed = "1"; b.textContent = "Emin misin? Tekrar bas";
+      setTimeout(() => { b.dataset.armed = ""; b.textContent = "🗑️ Sil"; }, 3000);
+      return;
+    }
+    const g = myGallery.get(), it = SH.items[SH.index];
+    try {
+      await api(`/api/galleries/${g.id}/drawings/${it.id}`, { method: "DELETE", headers: { Authorization: "Bearer " + g.secret } });
+      SH.cache.delete(it.id);
+      toast("Silindi");
+      SH.currentId = null;
+      await refreshShared(true);
+    } catch (e) { toast("Silinemedi: " + e.message, 3000); }
+    finally { b.dataset.armed = ""; b.textContent = "🗑️ Sil"; }
+  };
+
+  function route() {
+    const h = decodeURIComponent(location.hash.slice(1));
+    if (h === "ciz") return setMode("draw");
+    const gm = h.match(/^galeri\/([A-Za-z0-9]{6,20})$/);
+    if (gm) return openSharedGallery(gm[1]);
+    const n = Math.max(0, Math.min(list.length - 1, (parseInt(h, 10) || 1) - 1));
+    if (mode !== "gallery") { index = n; setMode("gallery"); } else open(n);
+  }
+  window.addEventListener("hashchange", route);
 
   window.addEventListener("resize", () => {
     if (!resize()) return;
@@ -828,11 +1038,9 @@ kbd { font-family: "JetBrains Mono", monospace; border: 1px solid var(--line); b
   fetch("data/manifest.json").then((r) => r.json()).then((m) => {
     list = m;
     $("pick").innerHTML = list.map((it, i) => `<option value="${i}">${i + 1}. ${esc(it.title)}</option>`).join("");
-    const h = location.hash.slice(1);
-    if (h === "ciz") { index = 0; setMode("draw"); }
-    else open(Math.max(0, Math.min(list.length - 1, (parseInt(h, 10) || 1) - 1)));
+    route();
   }).catch(() => { $("title").textContent = "Çizimler yüklenemedi"; });
-  window.__turtle = { P, get index() { return index; }, get count() { return list.length; } };
+  window.__turtle = { P, SH, get index() { return index; }, get count() { return list.length; }, get mode() { return mode; } };
 })();
 </script>
 </body>
