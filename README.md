@@ -1,6 +1,6 @@
 # Turtle Art Gallery 🐢
 
-65 drawings made with Python's `turtle` module, replayed live in the browser next to the exact code that produced them. Browse with ← / →, or switch to **Sen Çiz** to draw with mirror symmetry and get the Python turtle code for your own drawing.
+77 drawings made with Python's `turtle` module, replayed live in the browser next to the exact code that produced them. Browse with ← / →, or switch to **Sen Çiz** to draw with mirror symmetry and get the Python turtle code for your own drawing.
 
 **Live:** https://ardazeybek-dev.github.io/turtle-art-gallery/
 

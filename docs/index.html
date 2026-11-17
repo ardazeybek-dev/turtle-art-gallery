@@ -341,7 +341,7 @@ kbd { font-family: "JetBrains Mono", monospace; border: 1px solid var(--line); b
         const m = c.getTransform();
         c.save(); c.setTransform(1, 0, 0, 1, 0, 0);
         c.fillStyle = op[4];
-        c.font = `${op[8] === "bold" ? 700 : 400} ${op[5] * 1.333 * kk}px ${op[7]}, sans-serif`;
+        c.font = `${op[8] === "bold" ? 700 : 400} ${op[5] * 1.333 * kk}px ${op[7]}, ${/courier|consolas|mono/i.test(op[7]) ? "monospace" : "sans-serif"}`;
         c.textAlign = op[6]; c.textBaseline = "bottom";
         c.fillText(op[3], m.e + op[1] * kk, m.f - op[2] * kk);
         c.restore();
