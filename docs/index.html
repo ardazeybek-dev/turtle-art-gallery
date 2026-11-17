@@ -1,0 +1,638 @@
+<!doctype html>
+<html lang="tr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Turtle Galerisi</title>
+<meta name="description" content="Python turtle ile çizilmiş 48 çizim, kodlarıyla birlikte. Ok tuşlarıyla gez, kendi çizimini yap.">
+<meta property="og:title" content="Turtle Galerisi">
+<meta property="og:description" content="48 Python turtle çizimi, kodlarıyla birlikte canlı canlı çiziliyor.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600&family=Space+Grotesk:wght@500;700&display=swap" rel="stylesheet">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🐢</text></svg>">
+<style>
+:root {
+  --bg: #08080c;
+  --panel: #111118;
+  --panel-2: #181822;
+  --line: #262633;
+  --text: #ecebf3;
+  --muted: #8b8aa0;
+  --accent: #ff3d77;
+  --accent-2: #5ec8ff;
+  --kw: #c792ea; --str: #c3e88d; --num: #f78c6c; --com: #6b6f8a; --fn: #82aaff; --bi: #ffcb6b;
+  --gutter: 16px;
+}
+* { box-sizing: border-box; }
+html, body { margin: 0; background: var(--bg); color: var(--text); }
+body {
+  font-family: "Space Grotesk", system-ui, -apple-system, "Segoe UI", sans-serif;
+  min-height: 100vh; min-height: 100dvh;
+  -webkit-tap-highlight-color: transparent;
+}
+button, select, input { font: inherit; color: inherit; }
+button { cursor: pointer; }
+
+header {
+  display: flex; align-items: center; justify-content: space-between; gap: 12px;
+  padding: 14px var(--gutter); max-width: 1320px; margin: 0 auto;
+}
+.brand { display: flex; align-items: center; gap: 10px; min-width: 0; }
+.brand h1 { font-size: 20px; margin: 0; letter-spacing: -0.02em; white-space: nowrap; }
+.brand h1 span { color: var(--accent); }
+.tabs { display: flex; background: var(--panel); border: 1px solid var(--line); border-radius: 999px; padding: 3px; }
+.tabs button {
+  border: 0; background: transparent; padding: 7px 14px; border-radius: 999px; color: var(--muted);
+  font-weight: 600; font-size: 14px; white-space: nowrap;
+}
+.tabs button[aria-selected="true"] { background: var(--text); color: var(--bg); }
+
+main {
+  max-width: 1320px; margin: 0 auto; padding: 0 var(--gutter) 24px;
+  display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 20px; align-items: start;
+}
+.stage { display: flex; flex-direction: column; gap: 12px; }
+.canvas-wrap {
+  position: relative; width: 100%; aspect-ratio: 1 / 1; border-radius: 18px; overflow: hidden;
+  border: 1px solid var(--line); background: #000; touch-action: pan-y;
+}
+.canvas-wrap.drawing { touch-action: none; cursor: crosshair; }
+.canvas-wrap canvas { position: absolute; inset: 0; width: 100%; height: 100%; display: block; }
+.progress { position: absolute; left: 0; bottom: 0; height: 3px; background: var(--accent); width: 0; transition: width .1s linear; }
+.hint {
+  position: absolute; inset: 0; display: grid; place-items: center; pointer-events: none;
+  color: var(--muted); font-size: 15px; text-align: center; padding: 20px;
+}
+
+.titlebar { display: flex; align-items: baseline; justify-content: space-between; gap: 10px; }
+.titlebar h2 { margin: 0; font-size: 26px; letter-spacing: -0.02em; line-height: 1.1; }
+.counter { color: var(--muted); font-family: "JetBrains Mono", monospace; font-size: 14px; white-space: nowrap; }
+
+.controls { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.btn {
+  border: 1px solid var(--line); background: var(--panel); border-radius: 12px; padding: 10px 14px;
+  font-weight: 600; font-size: 15px; display: inline-flex; align-items: center; gap: 6px; line-height: 1;
+  min-height: 44px; transition: background .15s, border-color .15s;
+}
+.btn:hover { background: var(--panel-2); border-color: #3a3a4d; }
+.btn:active { transform: translateY(1px); }
+.btn.primary { background: var(--accent); border-color: var(--accent); color: #fff; }
+.btn.primary:hover { background: #ff5a8c; }
+.nav { font-size: 22px; width: 56px; justify-content: center; }
+.grow { flex: 1; }
+.seg { display: inline-flex; border: 1px solid var(--line); border-radius: 12px; overflow: hidden; }
+.seg button { border: 0; background: var(--panel); padding: 0 12px; min-height: 44px; font-weight: 600; font-size: 14px; color: var(--muted); }
+.seg button + button { border-left: 1px solid var(--line); }
+.seg button[aria-pressed="true"] { background: var(--panel-2); color: var(--text); }
+select.btn { appearance: none; padding-right: 30px; max-width: 220px;
+  background-image: linear-gradient(45deg, transparent 50%, var(--muted) 50%), linear-gradient(135deg, var(--muted) 50%, transparent 50%);
+  background-position: calc(100% - 16px) 50%, calc(100% - 11px) 50%; background-size: 5px 5px; background-repeat: no-repeat; }
+
+.code {
+  background: var(--panel); border: 1px solid var(--line); border-radius: 18px; overflow: hidden;
+  display: flex; flex-direction: column; min-height: 0;
+}
+.code-head {
+  display: flex; align-items: center; gap: 10px; padding: 10px 12px 10px 16px;
+  border-bottom: 1px solid var(--line); background: var(--panel-2);
+}
+.dots { display: flex; gap: 6px; }
+.dots i { width: 11px; height: 11px; border-radius: 50%; background: #3a3a4d; display: block; }
+.dots i:nth-child(1) { background: #ff5f57; } .dots i:nth-child(2) { background: #febc2e; } .dots i:nth-child(3) { background: #28c840; }
+.fname { font-family: "JetBrains Mono", monospace; font-size: 13px; color: var(--muted); flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.copy { min-height: 34px; padding: 6px 12px; font-size: 13px; border-radius: 9px; }
+pre {
+  margin: 0; padding: 14px 0; overflow: auto; font-family: "JetBrains Mono", ui-monospace, Consolas, monospace;
+  font-size: 13px; line-height: 1.6; counter-reset: ln; flex: 1; tab-size: 4;
+}
+pre .l { display: block; padding: 0 16px 0 0; white-space: pre; }
+pre .l::before {
+  counter-increment: ln; content: counter(ln); display: inline-block; width: 3.2em; padding-right: 1.1em;
+  text-align: right; color: #44445a; user-select: none;
+}
+.k { color: var(--kw); } .s { color: var(--str); } .n { color: var(--num); } .c { color: var(--com); font-style: italic; }
+.f { color: var(--fn); } .b { color: var(--bi); }
+.run-note { padding: 10px 16px; border-top: 1px solid var(--line); color: var(--muted); font-size: 13px; }
+.run-note code { font-family: "JetBrains Mono", monospace; color: var(--text); }
+
+.draw-tools { display: none; flex-direction: column; gap: 12px; padding: 14px 16px; border-bottom: 1px solid var(--line); }
+.mode-draw .draw-tools { display: flex; }
+.mode-draw .gallery-only { display: none !important; }
+.mode-gallery .draw-only { display: none !important; }
+.row { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+.row label { color: var(--muted); font-size: 14px; min-width: 76px; }
+.sw { width: 32px; height: 32px; border-radius: 50%; border: 2px solid transparent; padding: 0; }
+.sw[aria-pressed="true"] { border-color: var(--text); box-shadow: 0 0 0 2px var(--bg) inset; }
+.sw.rainbow { background: conic-gradient(red, orange, yellow, lime, cyan, blue, magenta, red); }
+input[type=range] { accent-color: var(--accent); width: 140px; }
+
+.toast {
+  position: fixed; left: 50%; bottom: 24px; transform: translateX(-50%) translateY(20px); opacity: 0;
+  background: var(--text); color: var(--bg); padding: 10px 16px; border-radius: 999px; font-weight: 600;
+  transition: .2s; pointer-events: none; z-index: 10;
+}
+.toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+footer { text-align: center; color: var(--muted); font-size: 13px; padding: 4px var(--gutter) 28px; }
+kbd { font-family: "JetBrains Mono", monospace; border: 1px solid var(--line); border-bottom-width: 2px; border-radius: 5px; padding: 1px 5px; font-size: 12px; }
+
+@media (min-width: 900px) {
+  main { align-items: stretch; grid-template-columns: minmax(320px, min(640px, calc(100vh - 200px))) minmax(0, 1fr); }
+  .code { contain: size; }
+}
+@media (max-width: 899px) {
+  main { grid-template-columns: 1fr; }
+  .code pre { max-height: 60vh; }
+  .titlebar h2 { font-size: 22px; }
+  .brand h1 { font-size: 17px; }
+  .tabs button { padding: 7px 11px; font-size: 13px; }
+  select.btn { max-width: 100%; flex: 1 1 100%; order: 10; }
+  .controls.gallery-only { flex-wrap: wrap; }
+  #replay { width: 48px; justify-content: center; padding: 0; font-size: 20px; }
+  #replay .lbl { display: none; }
+  .nav { width: 48px; }
+  .seg button { padding: 0 10px; }
+}
+@media (max-width: 380px) {
+  .seg button { padding: 0 9px; }
+  .nav { width: 48px; }
+}
+</style>
+</head>
+<body class="mode-gallery">
+<header>
+  <div class="brand"><span aria-hidden="true" style="font-size:24px">🐢</span><h1>Turtle <span>Galerisi</span></h1></div>
+  <div class="tabs" role="tablist">
+    <button role="tab" id="tabGallery" aria-selected="true">Galeri</button>
+    <button role="tab" id="tabDraw" aria-selected="false">✏️ Sen Çiz</button>
+  </div>
+</header>
+
+<main>
+  <section class="stage">
+    <div class="titlebar">
+      <h2 id="title">Yükleniyor…</h2>
+      <span class="counter gallery-only" id="counter"></span>
+    </div>
+    <div class="canvas-wrap" id="wrap">
+      <canvas id="cv"></canvas>
+      <canvas id="head"></canvas>
+      <div class="progress" id="progress"></div>
+      <div class="hint draw-only" id="drawHint">Parmağınla ya da fareyle çiz ✨</div>
+    </div>
+    <div class="controls gallery-only">
+      <button class="btn nav" id="prev" aria-label="Önceki çizim">‹</button>
+      <button class="btn" id="replay" aria-label="Tekrar çiz">↻<span class="lbl"> Tekrar</span></button>
+      <div class="seg" id="speed" aria-label="Hız">
+        <button data-s="1" aria-pressed="true">1×</button>
+        <button data-s="3" aria-pressed="false">3×</button>
+        <button data-s="0" aria-pressed="false">Anında</button>
+      </div>
+      <span class="grow"></span>
+      <button class="btn nav primary" id="next" aria-label="Sonraki çizim">›</button>
+      <select class="btn" id="pick" aria-label="Çizim seç"></select>
+    </div>
+    <div class="controls draw-only">
+      <button class="btn primary" id="turtleDraw">🐢 Turtle çizsin</button>
+      <button class="btn" id="undo">↶ Geri al</button>
+      <button class="btn" id="clear">Temizle</button>
+      <button class="btn" id="save">PNG indir</button>
+    </div>
+  </section>
+
+  <section class="code">
+    <div class="code-head">
+      <div class="dots"><i></i><i></i><i></i></div>
+      <span class="fname" id="fname">main.py</span>
+      <button class="btn copy" id="copy">Kodu kopyala</button>
+    </div>
+    <div class="draw-tools">
+      <div class="row"><label>Simetri</label>
+        <div class="seg" id="sym">
+          <button data-n="1" aria-pressed="false">1</button>
+          <button data-n="4" aria-pressed="false">4</button>
+          <button data-n="6" aria-pressed="false">6</button>
+          <button data-n="8" aria-pressed="true">8</button>
+          <button data-n="12" aria-pressed="false">12</button>
+        </div>
+        <button class="btn" id="mirror" aria-pressed="true" style="min-height:44px">Ayna: açık</button>
+      </div>
+      <div class="row"><label>Renk</label><div class="row" id="swatches"></div></div>
+      <div class="row"><label>Kalınlık</label><input type="range" id="width" min="1" max="12" value="2"><span id="widthVal" class="counter">2</span></div>
+    </div>
+    <pre id="code" tabindex="0" aria-label="Python kodu"></pre>
+    <div class="run-note">Kendi bilgisayarında: kodu <code>cizim.py</code> diye kaydet → <code>python cizim.py</code></div>
+  </section>
+</main>
+<footer class="gallery-only"><kbd>←</kbd> <kbd>→</kbd> ile gez · <kbd>Boşluk</kbd> tekrar çizer · telefonda resmi sağa sola kaydır</footer>
+<div class="toast" id="toast"></div>
+
+<script>
+(() => {
+  const $ = (id) => document.getElementById(id);
+  const cv = $("cv"), hcv = $("head"), wrap = $("wrap");
+  const ctx = cv.getContext("2d"), hctx = hcv.getContext("2d");
+  const WORLD = 700;
+  let list = [], index = 0, speed = 1, mode = "gallery";
+  const cache = new Map();
+
+  // ---------- canvas sizing ----------
+  let px = 0, k = 1;
+  function resize() {
+    const css = wrap.clientWidth;
+    const dpr = Math.min(window.devicePixelRatio || 1, 2.5);
+    const size = Math.round(css * dpr);
+    if (size === px) return false;
+    px = size; k = px / WORLD;
+    for (const c of [cv, hcv]) { c.width = px; c.height = px; }
+    return true;
+  }
+  function world(c) {
+    c.setTransform(k, 0, 0, -k, px / 2, px / 2);
+    c.lineCap = "round"; c.lineJoin = "round";
+  }
+
+  // ---------- player ----------
+  const P = { data: null, i: 0, j: 0, total: 0, done: 0, raf: 0, last: 0, acc: 0, hx: 0, hy: 0, dir: 0, onEnd: null };
+  function countSteps(ops) {
+    let n = 0;
+    for (const op of ops) n += op[0] === 0 ? (op.length - 1) / 2 - 1 : op[0] === 1 ? 0 : 1;
+    return n;
+  }
+  function clearTo(bg) {
+    ctx.setTransform(1, 0, 0, 1, 0, 0);
+    ctx.fillStyle = bg; ctx.fillRect(0, 0, px, px);
+    world(ctx);
+    ctx.strokeStyle = "#000"; ctx.lineWidth = 1;
+  }
+  function play(data, onEnd) {
+    cancelAnimationFrame(P.raf);
+    Object.assign(P, { data, i: 0, j: 0, done: 0, acc: 0, last: 0, total: countSteps(data.ops), hx: 0, hy: 0, dir: 0, onEnd: onEnd || null });
+    wrap.style.background = data.bg;
+    clearTo(data.bg);
+    P.raf = requestAnimationFrame(tick);
+  }
+  function stop() { cancelAnimationFrame(P.raf); P.data = null; hctx.setTransform(1, 0, 0, 1, 0, 0); hctx.clearRect(0, 0, px, px); $("progress").style.width = "0"; }
+  function redrawAll() {
+    if (!P.data) return;
+    const keep = P.done;
+    P.i = 0; P.j = 0; P.done = 0;
+    clearTo(P.data.bg);
+    run(keep);
+  }
+  function tick(ts) {
+    if (!P.data) return;
+    const dt = P.last ? Math.min(ts - P.last, 100) : 16;
+    P.last = ts;
+    let budget;
+    if (speed === 0) budget = Infinity;
+    else {
+      const dur = Math.min(12, Math.max(4, P.total / 350)) / speed;
+      P.acc += P.total * dt / (dur * 1000);
+      budget = Math.floor(P.acc); P.acc -= budget;
+    }
+    run(budget);
+    const finished = P.i >= P.data.ops.length;
+    drawHead(!finished);
+    $("progress").style.width = (finished ? 100 : (P.done / Math.max(1, P.total)) * 100) + "%";
+    if (!finished) P.raf = requestAnimationFrame(tick);
+    else { setTimeout(() => { if (P.data && P.i >= P.data.ops.length) $("progress").style.width = "0"; }, 600); if (P.onEnd) P.onEnd(); }
+  }
+  function run(budget) {
+    const ops = P.data.ops;
+    while (budget > 0 && P.i < ops.length) {
+      const op = ops[P.i];
+      const t = op[0];
+      if (t === 1) { ctx.strokeStyle = op[1]; ctx.lineWidth = op[2]; P.i++; continue; }
+      if (t === 0) {
+        const n = (op.length - 1) / 2 - 1;
+        const take = Math.min(budget, n - P.j);
+        ctx.beginPath();
+        ctx.moveTo(op[1 + 2 * P.j], op[2 + 2 * P.j]);
+        for (let s = 1; s <= take; s++) ctx.lineTo(op[1 + 2 * (P.j + s)], op[2 + 2 * (P.j + s)]);
+        ctx.stroke();
+        const e = P.j + take;
+        const x = op[1 + 2 * e], y = op[2 + 2 * e], x0 = op[2 * e - 1], y0 = op[2 * e];
+        if (x !== x0 || y !== y0) P.dir = Math.atan2(y - y0, x - x0);
+        P.hx = x; P.hy = y;
+        P.j = e; budget -= take; P.done += take;
+        if (P.j >= n) { P.i++; P.j = 0; }
+        continue;
+      }
+      if (t === 3) {
+        ctx.fillStyle = op[4]; ctx.beginPath(); ctx.arc(op[1], op[2], Math.max(op[3], 1) / 2, 0, Math.PI * 2); ctx.fill();
+        P.hx = op[1]; P.hy = op[2];
+      } else if (t === 4) {
+        const pts = op[2];
+        ctx.fillStyle = op[1]; ctx.beginPath(); ctx.moveTo(pts[0], pts[1]);
+        for (let s = 2; s < pts.length; s += 2) ctx.lineTo(pts[s], pts[s + 1]);
+        ctx.closePath(); ctx.fill();
+      } else if (t === 5) {
+        ctx.save(); ctx.setTransform(1, 0, 0, 1, 0, 0);
+        ctx.fillStyle = op[4];
+        ctx.font = `${op[8] === "bold" ? 700 : 400} ${op[5] * 1.333 * k}px ${op[7]}, sans-serif`;
+        ctx.textAlign = op[6]; ctx.textBaseline = "bottom";
+        ctx.fillText(op[3], px / 2 + op[1] * k, px / 2 - op[2] * k);
+        ctx.restore();
+      }
+      P.i++; budget--; P.done++;
+    }
+  }
+  function drawHead(show) {
+    hctx.setTransform(1, 0, 0, 1, 0, 0);
+    hctx.clearRect(0, 0, px, px);
+    if (!show) return;
+    world(hctx);
+    hctx.save();
+    hctx.translate(P.hx, P.hy); hctx.rotate(P.dir);
+    const s = 9 / Math.max(k, 0.4);
+    hctx.beginPath(); hctx.moveTo(s * 1.2, 0); hctx.lineTo(-s * 0.7, s * 0.7); hctx.lineTo(-s * 0.35, 0); hctx.lineTo(-s * 0.7, -s * 0.7); hctx.closePath();
+    hctx.fillStyle = "#fff"; hctx.shadowColor = "rgba(255,61,119,.9)"; hctx.shadowBlur = 12; hctx.fill();
+    hctx.restore();
+  }
+
+  // ---------- code view ----------
+  const KW = new Set("import as from def return for in if else elif while and or not None True False lambda with class pass break continue global".split(" "));
+  const BI = new Set("range len int float str abs min max sum round print list tuple enumerate reversed zip".split(" "));
+  const esc = (s) => s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+  function highlight(code) {
+    const re = /(#[^\n]*)|("(?:[^"\\\n]|\\.)*"|'(?:[^'\\\n]|\\.)*')|(\b\d+(?:\.\d+)?\b)|([A-Za-z_]\w*)|([\s\S])/g;
+    let out = "", m;
+    while ((m = re.exec(code))) {
+      if (m[1]) out += `<span class="c">${esc(m[1])}</span>`;
+      else if (m[2]) out += `<span class="s">${esc(m[2])}</span>`;
+      else if (m[3]) out += `<span class="n">${m[3]}</span>`;
+      else if (m[4]) {
+        const w = m[4];
+        if (KW.has(w)) out += `<span class="k">${w}</span>`;
+        else if (BI.has(w)) out += `<span class="b">${w}</span>`;
+        else if (code[re.lastIndex] === "(") out += `<span class="f">${w}</span>`;
+        else out += w;
+      } else out += esc(m[5]);
+    }
+    return out.replace(/\n$/, "").split("\n").map((l) => `<span class="l">${l || " "}</span>`).join("");
+  }
+  let currentCode = "";
+  function showCode(code, fname) {
+    currentCode = code;
+    $("code").innerHTML = highlight(code);
+    $("code").scrollTop = 0;
+    $("fname").textContent = fname;
+  }
+
+  // ---------- gallery ----------
+  async function load(i) {
+    if (!cache.has(i)) cache.set(i, fetch("data/" + list[i].file).then((r) => { if (!r.ok) throw new Error(r.status); return r.json(); }));
+    return cache.get(i);
+  }
+  let token = 0;
+  async function open(i) {
+    index = (i + list.length) % list.length;
+    const item = list[index];
+    $("title").textContent = item.title;
+    $("counter").textContent = `${index + 1} / ${list.length}`;
+    $("pick").value = String(index);
+    showCode(item.code, item.py.replace(/^\d+_/, ""));
+    history.replaceState(null, "", "#" + (index + 1));
+    const my = ++token;
+    try {
+      const data = await load(index);
+      if (my !== token || mode !== "gallery") return;
+      play(data);
+      load((index + 1) % list.length).catch(() => {});
+    } catch (e) {
+      if (my === token) toast("Çizim yüklenemedi, sayfayı yenile");
+    }
+  }
+
+  // ---------- draw mode ----------
+  const palette = ["#ff3d77", "#ffb000", "#ffee33", "#33ff99", "#5ec8ff", "#9b6bff", "#ffffff"];
+  const D = { strokes: [], cur: null, n: 8, mirror: true, color: "rainbow", width: 2, hue: 0 };
+  palette.forEach((c) => addSwatch(c));
+  addSwatch("rainbow", true);
+  function addSwatch(c, sel) {
+    const b = document.createElement("button");
+    b.className = "sw" + (c === "rainbow" ? " rainbow" : "");
+    if (c !== "rainbow") b.style.background = c;
+    b.setAttribute("aria-label", c === "rainbow" ? "Gökkuşağı" : c);
+    b.setAttribute("aria-pressed", sel ? "true" : "false");
+    b.onclick = () => { D.color = c; for (const x of $("swatches").children) x.setAttribute("aria-pressed", x === b ? "true" : "false"); };
+    $("swatches").appendChild(b);
+  }
+  function hsl2hex(h) {
+    const f = (n) => { const kk = (n + h / 30) % 12; const v = 0.6 - 0.4 * Math.max(Math.min(kk - 3, 9 - kk, 1), -1); return Math.round(255 * v).toString(16).padStart(2, "0"); };
+    return "#" + f(0) + f(8) + f(4);
+  }
+  function variants(x, y) {
+    const out = [];
+    for (let i = 0; i < D.n; i++) {
+      const a = 2 * Math.PI * i / D.n, c = Math.cos(a), s = Math.sin(a);
+      out.push([x * c - y * s, x * s + y * c]);
+      if (D.mirror) out.push([x * c + y * s, x * s - y * c]);
+    }
+    return out;
+  }
+  function strokeSegment(st, a, b) {
+    ctx.strokeStyle = st.color; ctx.lineWidth = st.width;
+    const va = variants(a[0], a[1]), vb = variants(b[0], b[1]);
+    ctx.beginPath();
+    for (let i = 0; i < va.length; i++) { ctx.moveTo(va[i][0], va[i][1]); ctx.lineTo(vb[i][0], vb[i][1]); }
+    ctx.stroke();
+  }
+  function redrawStrokes() {
+    clearTo("#000000");
+    const keepN = D.n, keepM = D.mirror;
+    for (const st of D.strokes) {
+      D.n = st.n; D.mirror = st.mirror;
+      for (let i = 1; i < st.pts.length; i++) strokeSegment(st, st.pts[i - 1], st.pts[i]);
+    }
+    D.n = keepN; D.mirror = keepM;
+  }
+  function toWorld(e) {
+    const r = cv.getBoundingClientRect();
+    const x = ((e.clientX - r.left) / r.width - 0.5) * WORLD;
+    const y = (0.5 - (e.clientY - r.top) / r.height) * WORLD;
+    return [Math.round(x), Math.round(y)];
+  }
+  wrap.addEventListener("pointerdown", (e) => {
+    if (mode !== "draw") return;
+    if (P.data) { stop(); redrawStrokes(); }
+    wrap.setPointerCapture(e.pointerId);
+    $("drawHint").style.display = "none";
+    let color = D.color;
+    if (color === "rainbow") { color = hsl2hex(D.hue); D.hue = (D.hue + 37) % 360; }
+    D.cur = { color, width: D.width, n: D.n, mirror: D.mirror, pts: [toWorld(e)] };
+  });
+  wrap.addEventListener("pointermove", (e) => {
+    if (mode !== "draw" || !D.cur) return;
+    const p = toWorld(e), last = D.cur.pts[D.cur.pts.length - 1];
+    if (Math.hypot(p[0] - last[0], p[1] - last[1]) < 4) return;
+    D.cur.pts.push(p);
+    strokeSegment(D.cur, last, p);
+  });
+  const endStroke = () => {
+    if (!D.cur) return;
+    if (D.cur.pts.length > 1) { D.strokes.push(D.cur); updateDrawCode(); }
+    D.cur = null;
+  };
+  wrap.addEventListener("pointerup", endStroke);
+  wrap.addEventListener("pointercancel", endStroke);
+
+  function updateDrawCode() {
+    const groups = [];
+    for (const st of D.strokes) {
+      const key = `${st.n}|${st.mirror}`;
+      let g = groups.find((x) => x.key === key);
+      if (!g) groups.push(g = { key, n: st.n, mirror: st.mirror, strokes: [] });
+      g.strokes.push(st);
+    }
+    const lines = [
+      "# Benim Çizimim", "import turtle as t", "import math as m", "",
+      "s = t.Screen()", "s.setup(700, 700)", 's.bgcolor("black")', "s.tracer(0)",
+      "p = t.Turtle()", "p.hideturtle()", "",
+      "",
+      "def draw(strokes, n, mirror):",
+      "    for color, width, pts in strokes:",
+      "        p.pencolor(color)",
+      "        p.width(width)",
+      "        for k in range(n):",
+      "            a = 2 * m.pi * k / n",
+      "            for sign in ((1, -1) if mirror else (1,)):",
+      "                p.penup()",
+      "                for x, y in pts:",
+      "                    y2 = y * sign",
+      "                    p.goto(x * m.cos(a) - y2 * m.sin(a),",
+      "                           x * m.sin(a) + y2 * m.cos(a))",
+      "                    p.pendown()",
+      "            s.update()", "", "",
+    ];
+    if (!groups.length) lines.push("# Sol taraftaki tuvale çiz, kodun burada belirecek");
+    groups.forEach((g, gi) => {
+      lines.push(`strokes${gi + 1} = [`);
+      for (const st of g.strokes) {
+        const pts = st.pts.map((p) => `(${p[0]}, ${p[1]})`);
+        const rows = [];
+        for (let i = 0; i < pts.length; i += 6) rows.push("      " + pts.slice(i, i + 6).join(", "));
+        lines.push(`    ("${st.color}", ${st.width}, [`, rows.join(",\n"), "    ]),");
+      }
+      lines.push("]", `draw(strokes${gi + 1}, ${g.n}, ${g.mirror ? "True" : "False"})`, "");
+    });
+    lines.push("s.update()", "t.done()");
+    showCode(lines.join("\n") + "\n", "benim_cizimim.py");
+  }
+  function drawOps() {
+    const ops = [];
+    for (const st of D.strokes) {
+      ops.push([1, st.color, st.width]);
+      for (let i = 0; i < st.n; i++) {
+        const a = 2 * Math.PI * i / st.n, c = Math.cos(a), s = Math.sin(a);
+        for (const sign of st.mirror ? [1, -1] : [1]) {
+          const op = [0];
+          for (const [x, y] of st.pts) { const y2 = y * sign; op.push(x * c - y2 * s, x * s + y2 * c); }
+          ops.push(op);
+        }
+      }
+    }
+    return { bg: "#000000", ops };
+  }
+  $("turtleDraw").onclick = () => {
+    if (!D.strokes.length) return toast("Önce bir şey çiz 🙂");
+    play(drawOps());
+  };
+  $("undo").onclick = () => { stop(); D.strokes.pop(); redrawStrokes(); updateDrawCode(); };
+  $("clear").onclick = () => { stop(); D.strokes = []; redrawStrokes(); updateDrawCode(); $("drawHint").style.display = ""; };
+  $("save").onclick = () => {
+    cv.toBlob((b) => {
+      const a = document.createElement("a");
+      a.href = URL.createObjectURL(b); a.download = "turtle-cizimim.png"; a.click();
+      setTimeout(() => URL.revokeObjectURL(a.href), 2000);
+    });
+  };
+  $("sym").addEventListener("click", (e) => {
+    const b = e.target.closest("button"); if (!b) return;
+    D.n = +b.dataset.n;
+    for (const x of $("sym").children) x.setAttribute("aria-pressed", x === b ? "true" : "false");
+  });
+  $("mirror").onclick = () => {
+    D.mirror = !D.mirror;
+    $("mirror").setAttribute("aria-pressed", D.mirror);
+    $("mirror").textContent = "Ayna: " + (D.mirror ? "açık" : "kapalı");
+  };
+  $("width").oninput = (e) => { D.width = +e.target.value; $("widthVal").textContent = D.width; };
+
+  // ---------- mode switch ----------
+  function setMode(m) {
+    if (m === mode) return;
+    mode = m;
+    document.body.className = "mode-" + m;
+    $("tabGallery").setAttribute("aria-selected", m === "gallery");
+    $("tabDraw").setAttribute("aria-selected", m === "draw");
+    wrap.classList.toggle("drawing", m === "draw");
+    stop();
+    if (m === "draw") {
+      $("title").textContent = "Kendi çizimin";
+      wrap.style.background = "#000";
+      redrawStrokes(); updateDrawCode();
+      $("drawHint").style.display = D.strokes.length ? "none" : "";
+      history.replaceState(null, "", "#ciz");
+    } else open(index);
+  }
+  $("tabGallery").onclick = () => setMode("gallery");
+  $("tabDraw").onclick = () => setMode("draw");
+
+  // ---------- controls ----------
+  $("prev").onclick = () => open(index - 1);
+  $("next").onclick = () => open(index + 1);
+  $("replay").onclick = () => open(index);
+  $("pick").onchange = (e) => open(+e.target.value);
+  $("speed").addEventListener("click", (e) => {
+    const b = e.target.closest("button"); if (!b) return;
+    speed = +b.dataset.s;
+    for (const x of $("speed").children) x.setAttribute("aria-pressed", x === b ? "true" : "false");
+  });
+  $("copy").onclick = async () => {
+    try { await navigator.clipboard.writeText(currentCode); toast("Kod kopyalandı ✅"); }
+    catch { const r = document.createRange(); r.selectNodeContents($("code")); const s = getSelection(); s.removeAllRanges(); s.addRange(r); toast("Seçildi, Ctrl+C ile kopyala"); }
+  };
+  document.addEventListener("keydown", (e) => {
+    if (mode !== "gallery" || e.target.closest("select, input")) return;
+    if (e.key === "ArrowRight") { e.preventDefault(); open(index + 1); }
+    else if (e.key === "ArrowLeft") { e.preventDefault(); open(index - 1); }
+    else if (e.key === " " && !e.target.closest("button")) { e.preventDefault(); open(index); }
+  });
+  let sx = null, sy = null;
+  wrap.addEventListener("touchstart", (e) => { if (mode === "gallery") { sx = e.touches[0].clientX; sy = e.touches[0].clientY; } }, { passive: true });
+  wrap.addEventListener("touchend", (e) => {
+    if (mode !== "gallery" || sx === null) return;
+    const dx = e.changedTouches[0].clientX - sx, dy = e.changedTouches[0].clientY - sy;
+    sx = null;
+    if (Math.abs(dx) > 50 && Math.abs(dx) > Math.abs(dy) * 1.5) open(index + (dx < 0 ? 1 : -1));
+  });
+
+  let toastTimer;
+  function toast(msg) {
+    const t = $("toast"); t.textContent = msg; t.classList.add("show");
+    clearTimeout(toastTimer); toastTimer = setTimeout(() => t.classList.remove("show"), 1800);
+  }
+
+  window.addEventListener("resize", () => {
+    if (!resize()) return;
+    if (mode === "draw" && !P.data) redrawStrokes();
+    else redrawAll();
+  });
+
+  // ---------- start ----------
+  resize();
+  clearTo("#000");
+  fetch("data/manifest.json").then((r) => r.json()).then((m) => {
+    list = m;
+    $("pick").innerHTML = list.map((it, i) => `<option value="${i}">${i + 1}. ${esc(it.title)}</option>`).join("");
+    const h = location.hash.slice(1);
+    if (h === "ciz") { index = 0; setMode("draw"); }
+    else open(Math.max(0, Math.min(list.length - 1, (parseInt(h, 10) || 1) - 1)));
+  }).catch(() => { $("title").textContent = "Çizimler yüklenemedi"; });
+  window.__turtle = { P, get index() { return index; }, get count() { return list.length; } };
+})();
+</script>
+</body>
+</html>
